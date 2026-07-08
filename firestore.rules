@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function incoming() { 
+      return request.resource.data; 
+    }
+    function existing() { 
+      return resource.data; 
+    }
+
+    // Validation helper for user document
+    function isValidUser(user) {
+      return user.keys().hasAll(['id', 'full_name', 'phone_number', 'created_at', 'status']) &&
+             user.keys().size() == 5 &&
+             user.id is string && user.id.size() <= 128 &&
+             user.full_name is string && user.full_name.size() <= 200 &&
+             user.phone_number is string && user.phone_number.size() <= 30 &&
+             user.created_at is string && user.created_at.size() <= 50 &&
+             user.status in ['active', 'suspended'];
+    }
+
+    // Validation helper for plan document
+    function isValidPlan(plan) {
+      return plan.keys().hasAll(['id', 'name', 'price', 'duration', 'duration_hours', 'description', 'active']) &&
+             plan.keys().size() == 7 &&
+             plan.id is string && plan.id.size() <= 128 &&
+             plan.name is string && plan.name.size() <= 100 &&
+             (plan.price is int || plan.price is float) && plan.price >= 0 &&
+             plan.duration is string && plan.duration.size() <= 50 &&
+             (plan.duration_hours is int || plan.duration_hours is float) && plan.duration_hours >= 0 &&
+             plan.description is string && plan.description.size() <= 1000 &&
+             plan.active is bool;
+    }
+
+    // Validation helper for subscription document
+    function isValidSubscription(sub) {
+      return sub.keys().hasAll(['id', 'user_id', 'plan_id', 'start_date', 'end_date', 'status']) &&
+             sub.keys().size() == 6 &&
+             sub.id is string && sub.id.size() <= 128 &&
+             sub.user_id is string && sub.user_id.size() <= 128 &&
+             sub.plan_id is string && sub.plan_id.size() <= 128 &&
+             sub.start_date is string && sub.start_date.size() <= 50 &&
+             sub.end_date is string && sub.end_date.size() <= 50 &&
+             sub.status in ['active', 'expired'];
+    }
+
+    // Validation helper for payment document
+    function isValidPayment(pay) {
+      return pay.keys().hasAll(['id', 'user_id', 'plan_id', 'amount', 'payment_method', 'transaction_id', 'status', 'created_at']) &&
+             pay.keys().size() == 8 &&
+             pay.id is string && pay.id.size() <= 128 &&
+             pay.user_id is string && pay.user_id.size() <= 128 &&
+             pay.plan_id is string && pay.plan_id.size() <= 128 &&
+             (pay.amount is int || pay.amount is float) && pay.amount >= 0 &&
+             pay.payment_method is string && pay.payment_method.size() <= 100 &&
+             pay.transaction_id is string && pay.transaction_id.size() <= 128 &&
+             pay.status in ['pending', 'success', 'failed'] &&
+             pay.created_at is string && pay.created_at.size() <= 50;
+    }
+
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create: if isValidUser(incoming()) && incoming().id == userId;
+      allow update: if isValidUser(incoming()) && incoming().id == userId && incoming().id == existing().id;
+      allow delete: if true;
+    }
+    match /plans/{planId} {
+      allow get, list: if true;
+      allow create: if isValidPlan(incoming()) && incoming().id == planId;
+      allow update: if isValidPlan(incoming()) && incoming().id == planId && incoming().id == existing().id;
+      allow delete: if true;
+    }
+    match /subscriptions/{subscriptionId} {
+      allow get, list: if true;
+      allow create: if isValidSubscription(incoming()) && incoming().id == subscriptionId;
+      allow update: if isValidSubscription(incoming()) && incoming().id == subscriptionId && incoming().id == existing().id;
+      allow delete: if true;
+    }
+    match /payments/{paymentId} {
+      allow get, list: if true;
+      allow create: if isValidPayment(incoming()) && incoming().id == paymentId;
+      allow update: if isValidPayment(incoming()) && incoming().id == paymentId && incoming().id == existing().id;
+      allow delete: if true;
+    }
+  }
+}

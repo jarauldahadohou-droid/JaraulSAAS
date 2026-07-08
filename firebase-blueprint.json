@@ -1,0 +1,80 @@
+{
+  "entities": {
+    "user": {
+      "title": "User Profile",
+      "description": "User account information and profile details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique Firebase Auth UID of the user" },
+        "full_name": { "type": "string", "description": "Full display name of the user" },
+        "phone_number": { "type": "string", "description": "The user's Beninese phone number (e.g. +229 XX XX XX XX)" },
+        "created_at": { "type": "string", "format": "date-time", "description": "When the profile was created" },
+        "status": { "type": "string", "enum": ["active", "suspended"], "description": "Status of the user's account" }
+      },
+      "required": ["id", "full_name", "phone_number", "created_at", "status"]
+    },
+    "plan": {
+      "title": "Subscription Plan",
+      "description": "Available subscription plan that users can buy",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the plan" },
+        "name": { "type": "string", "description": "Name of the plan" },
+        "price": { "type": "integer", "description": "Price in XOF (FCFA)" },
+        "duration": { "type": "string", "description": "Human readable duration" },
+        "duration_hours": { "type": "integer", "description": "Duration in hours" },
+        "description": { "type": "string", "description": "Description of the plan features" },
+        "active": { "type": "boolean", "description": "Whether the plan is active" }
+      },
+      "required": ["id", "name", "price", "duration", "duration_hours", "description", "active"]
+    },
+    "subscription": {
+      "title": "User Subscription",
+      "description": "Active or expired subscription of a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the subscription" },
+        "user_id": { "type": "string", "description": "UID of the user who owns the subscription" },
+        "plan_id": { "type": "string", "description": "ID of the plan subscribed to" },
+        "start_date": { "type": "string", "format": "date-time", "description": "When the subscription started" },
+        "end_date": { "type": "string", "format": "date-time", "description": "When the subscription will expire" },
+        "status": { "type": "string", "enum": ["active", "expired"], "description": "Current status of the subscription" }
+      },
+      "required": ["id", "user_id", "plan_id", "start_date", "end_date", "status"]
+    },
+    "payment": {
+      "title": "Mobile Money Payment",
+      "description": "Details of MTN or Moov Mobile Money payment transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique payment record ID" },
+        "user_id": { "type": "string", "description": "UID of the user who made the payment" },
+        "plan_id": { "type": "string", "description": "ID of the plan purchased" },
+        "amount": { "type": "integer", "description": "Transaction amount in XOF" },
+        "payment_method": { "type": "string", "description": "Payment method (e.g. MTN Mobile Money, Moov Money)" },
+        "transaction_id": { "type": "string", "description": "Operator transaction reference ID" },
+        "status": { "type": "string", "enum": ["pending", "success", "failed"], "description": "Transaction state" },
+        "created_at": { "type": "string", "format": "date-time", "description": "When the transaction was initiated" }
+      },
+      "required": ["id", "user_id", "plan_id", "amount", "payment_method", "transaction_id", "status", "created_at"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "Individual user accounts indexed by Firebase Auth UID"
+    },
+    "plans/{planId}": {
+      "schema": { "$ref": "#/entities/plan" },
+      "description": "Collection of subscription plans"
+    },
+    "subscriptions/{subscriptionId}": {
+      "schema": { "$ref": "#/entities/subscription" },
+      "description": "Collection of subscriptions for VPN access"
+    },
+    "payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/payment" },
+      "description": "Collection of Mobile Money payments"
+    }
+  }
+}
